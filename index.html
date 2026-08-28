@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عقل × هبد</title>
+    <!-- مكتبة الألعاب النارية الاحتفالية -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #0f172a; color: #fff; text-align: center; padding: 20px; margin: 0; }
+        .container { max-width: 500px; margin: 0 auto; }
+        .setup-box { background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
+        input { padding: 8px; border-radius: 6px; border: 1px solid #38bdf8; margin: 5px; width: 40%; text-align: center; font-weight: bold; }
+        .scoreboard { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
+        .player-card { background: #1e293b; border: 2px solid #38bdf8; padding: 10px; border-radius: 10px; flex: 1; }
+        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin: 20px 0; border: 2px solid #f97316; }
+        .btn { background: #f97316; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 4px; }
+        .btn-brain { background: #0ea5e9; }
+        .btn-habd { background: #f97316; }
+        .btn-action { background: #334155; }
+        .btn-reset { background: #ef4444; width: 100%; margin-top: 10px; padding: 10px; }
+
+        /* نافذة الاحتفال بالفائز */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #1e293b; padding: 30px; border-radius: 20px; border: 3px solid #f97316; max-width: 80%; animation: popIn 0.5s ease-out; }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>عقل × هبد 🧠✖️🗣️</h1>
+
+        <div class="setup-box">
+            <input type="text" id="p1Input" value="اللاعب 1" onchange="updateNames()">
+            <input type="text" id="p2Input" value="اللاعب 2" onchange="updateNames()">
+        </div>
+
+        <div class="scoreboard">
+            <div class="player-card">
+                <h3 id="p1Name">اللاعب 1</h3>
+                <p>🧠: <span id="p1Brain">0</span> | 🗣️: <span id="p1Habd">0</span></p>
+                <button class="btn btn-brain" onclick="addPoint(1, 'brain')">+🧠</button>
+                <button class="btn btn-habd" onclick="addPoint(1, 'habd')">+🗣️</button>
+            </div>
+            <div class="player-card">
+                <h3 id="p2Name">اللاعب 2</h3>
+                <p>🧠: <span id="p2Brain">0</span> | 🗣️: <span id="p2Habd">0</span></p>
+                <button class="btn btn-brain" onclick="addPoint(2, 'brain')">+🧠</button>
+                <button class="btn btn-habd" onclick="addPoint(2, 'habd')">+🗣️</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 id="category" style="color: #38bdf8;">اضغط لبدء اللعبة</h3>
+            <p id="question">جاهز للتحدي؟</p>
+            <p id="answer" style="display:none; color: #4ade80; font-weight: bold;"></p>
+            
+            <button class="btn btn-action" onclick="showAnswer()">إظهار الإجابة</button>
+            <button class="btn btn-action" onclick="nextQuestion()">السؤال التالي</button>
+        </div>
+
+        <button class="btn btn-reset" onclick="resetGame()">إعادة تصفير النتيجة 🔄</button>
+    </div>
+
+    <!-- نافذة الاحتفال بالبطل -->
+    <div id="winModal" class="modal">
+        <div class="modal-content">
+            <h1 style="font-size: 2.5rem; margin: 0;">🎉 🏆 🎉</h1>
+            <h2 id="winnerText" style="color: #38bdf8; margin: 15px 0;"></h2>
+            <p style="font-size: 1.2rem; color: #f97316; font-weight: bold;">لقب المفكر الهاباد رسميًا!</p>
+            <button class="btn btn-brain" onclick="closeModal()" style="padding: 10px 20px; margin-top: 15px;">لعب جولة جديدة 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { cat: "تشغيل دماغ 🧠", q: "شيء كل ما تاخد منه يكبر؟", a: "الحفرة" },
+            { cat: "هبد في هبد 🗣️", q: "ليه الزرافة رقبتها طويلة؟ (أفضل هبدة تتصدق تكسب)", a: "أهبد إجابة مبتكرة ومقنعة تاخد النقطة!" },
+            { cat: "أسئلة عامة 📚", q: "ما هي عاصمة أستراليا؟", a: "كانبرا" },
+            { cat: "خمن الإفيه 🎬", q: "كمل: 'أنا مش مصدق عيني.. حنفي بنفسه...'", a: "هنا!" }
+        ];
+
+        let scores = {
+            1: { brain: 0, habd: 0 },
+            2: { brain: 0, habd: 0 }
+        };
+
+        function updateNames() {
+            document.getElementById('p1Name').innerText = document.getElementById('p1Input').value;
+            document.getElementById('p2Name').innerText = document.getElementById('p2Input').value;
+        }
+
+        function addPoint(player, type) {
+            scores[player][type]++;
+            document.getElementById(`p${player}${type.charAt(0).toUpperCase() + type.slice(1)}`).innerText = scores[player][type];
+            checkWinner(player);
+        }
+
+        function checkWinner(player) {
+            if (scores[player].brain >= 5 && scores[player].habd >= 5) {
+                const playerName = document.getElementById(`p${player}Name`).innerText;
+                triggerFireworks();
+                document.getElementById('winnerText').innerText = `مبروك يا ${playerName}!`;
+                document.getElementById('winModal').style.display = 'flex';
+            }
+        }
+
+        function triggerFireworks() {
+            var duration = 3 * 1000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 } });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 } });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        function closeModal() {
+            document.getElementById('winModal').style.display = 'none';
+            resetGame();
+        }
+
+        function nextQuestion() {
+            const random = questions[Math.floor(Math.random() * questions.length)];
+            document.getElementById("category").innerText = random.cat;
+            document.getElementById("question").innerText = random.q;
+            document.getElementById("answer").innerText = "الإجابة: " + random.a;
+            document.getElementById("answer").style.display = "none";
+        }
+
+        function showAnswer() {
+            document.getElementById("answer").style.display = "block";
+        }
+
+        function resetGame() {
+            scores = { 1: { brain: 0, habd: 0 }, 2: { brain: 0, habd: 0 } };
+            document.getElementById('p1Brain').innerText = 0;
+            document.getElementById('p1Habd').innerText = 0;
+            document.getElementById('p2Brain').innerText = 0;
+            document.getElementById('p2Habd').innerText = 0;
+        }
+    </script>
+</body>
+</html>
