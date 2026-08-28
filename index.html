@@ -4,91 +4,237 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>عقل × هبد</title>
-    <!-- مكتبة الألعاب النارية الاحتفالية -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        body { font-family: system-ui, sans-serif; background: #0f172a; color: #fff; text-align: center; padding: 20px; margin: 0; }
-        .container { max-width: 500px; margin: 0 auto; }
-        .setup-box { background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
-        input { padding: 8px; border-radius: 6px; border: 1px solid #38bdf8; margin: 5px; width: 40%; text-align: center; font-weight: bold; }
-        .scoreboard { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
-        .player-card { background: #1e293b; border: 2px solid #38bdf8; padding: 10px; border-radius: 10px; flex: 1; }
-        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin: 20px 0; border: 2px solid #f97316; }
-        .btn { background: #f97316; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 4px; }
-        .btn-brain { background: #0ea5e9; }
-        .btn-habd { background: #f97316; }
-        .btn-action { background: #334155; }
-        .btn-reset { background: #ef4444; width: 100%; margin-top: 10px; padding: 10px; }
+        :root { --primary: #f97316; --secondary: #0ea5e9; --bg: #0b0f19; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: #fff; text-align: center; margin: 0; padding: 15px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .hidden { display: none !important; }
+        
+        .hero-img { width: 100%; max-width: 450px; border-radius: 16px; box-shadow: 0 0 25px rgba(249, 115, 22, 0.4); margin-bottom: 15px; }
+        .btn-start { background: linear-gradient(45deg, #f97316, #eab308); color: #fff; font-size: 1.4rem; font-weight: bold; padding: 15px 40px; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); width: 80%; }
+        
+        .setup-box, .game-box, .categories-grid { background: #182234; padding: 15px; border-radius: 16px; border: 1px solid #2d3d5a; margin-bottom: 15px; }
+        input { padding: 8px; border-radius: 8px; border: 1px solid var(--secondary); background: #0f172a; color: #fff; text-align: center; width: 40%; font-weight: bold; }
+        .scoreboard { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
+        .player-card { background: #0f172a; border: 2px solid var(--secondary); padding: 10px; border-radius: 12px; flex: 1; }
+        
+        .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+        .cat-btn { background: #0f172a; border: 1px solid #334155; color: #fff; padding: 12px 8px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .cat-btn:hover { border-color: var(--primary); background: #1e293b; }
 
-        /* نافذة الاحتفال بالفائز */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: #1e293b; padding: 30px; border-radius: 20px; border: 3px solid #f97316; max-width: 80%; animation: popIn 0.5s ease-out; }
-        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        /* تنسيق كارت الأسئلة والصور */
+        .q-card { background: #0f172a; border-radius: 12px; padding: 15px; border: 2px solid var(--primary); margin: 15px 0; }
+        .q-img { width: 100%; max-width: 320px; max-height: 250px; object-fit: cover; border-radius: 10px; border: 2px solid var(--secondary); margin: 10px auto; display: block; }
+        
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 15px; }
+        .opt-btn { background: #1e293b; border: 1px solid #334155; color: #fff; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 1rem; text-align: right; }
+        .opt-btn.correct { background: #22c55e !important; border-color: #22c55e; }
+        .opt-btn.wrong { background: #ef4444 !important; border-color: #ef4444; }
+
+        .btn-action { background: #334155; color: #fff; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 4px; }
+        .btn-reset { background: #ef4444; width: 100%; padding: 10px; border: none; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #182234; padding: 30px; border-radius: 20px; border: 3px solid var(--primary); max-width: 80%; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>عقل × هبد 🧠✖️🗣️</h1>
-
-        <div class="setup-box">
-            <input type="text" id="p1Input" value="اللاعب 1" onchange="updateNames()">
-            <input type="text" id="p2Input" value="اللاعب 2" onchange="updateNames()">
+        
+        <div id="homeScreen">
+            <img src="logo.png" alt="عقل x هبد" class="hero-img" onerror="this.src='https://via.placeholder.com/450x450/0b0f19/f97316?text=%D8%B9%D9%82%D9%84+%D9%80%D9%80%D9%80%D9%80+x+%D9%80%D9%80%D9%80%D9%80+%D9%87%D8%A8%D8%AF'">
+            <br>
+            <button class="btn-start" onclick="goToSetup()">إبدأ التحدي 🔥</button>
         </div>
 
-        <div class="scoreboard">
-            <div class="player-card">
-                <h3 id="p1Name">اللاعب 1</h3>
-                <p>🧠: <span id="p1Brain">0</span> | 🗣️: <span id="p1Habd">0</span></p>
-                <button class="btn btn-brain" onclick="addPoint(1, 'brain')">+🧠</button>
-                <button class="btn btn-habd" onclick="addPoint(1, 'habd')">+🗣️</button>
+        <div id="setupScreen" class="hidden">
+            <h2>👥 تسجيل التحدي</h2>
+            <div class="setup-box">
+                <input type="text" id="p1Input" value="اللاعب 1" onchange="updateNames()">
+                <input type="text" id="p2Input" value="اللاعب 2" onchange="updateNames()">
             </div>
-            <div class="player-card">
-                <h3 id="p2Name">اللاعب 2</h3>
-                <p>🧠: <span id="p2Brain">0</span> | 🗣️: <span id="p2Habd">0</span></p>
-                <button class="btn btn-brain" onclick="addPoint(2, 'brain')">+🧠</button>
-                <button class="btn btn-habd" onclick="addPoint(2, 'habd')">+🗣️</button>
-            </div>
+            <button class="btn-start" style="font-size: 1.1rem; padding: 10px 20px;" onclick="goToCategories()">اختر القسم 🎮</button>
         </div>
 
-        <div class="card">
-            <h3 id="category" style="color: #38bdf8;">اضغط لبدء اللعبة</h3>
-            <p id="question">جاهز للتحدي؟</p>
-            <p id="answer" style="display:none; color: #4ade80; font-weight: bold;"></p>
+        <div id="gameScreen" class="hidden">
             
-            <button class="btn btn-action" onclick="showAnswer()">إظهار الإجابة</button>
-            <button class="btn btn-action" onclick="nextQuestion()">السؤال التالي</button>
+            <div class="scoreboard">
+                <div class="player-card">
+                    <h3 id="p1Name">اللاعب 1</h3>
+                    <p>🧠: <span id="p1Brain">0</span> | 🗣️: <span id="p1Habd">0</span></p>
+                    <button class="btn-action" style="background: var(--secondary)" onclick="addPoint(1, 'brain')">+🧠</button>
+                    <button class="btn-action" style="background: var(--primary)" onclick="addPoint(1, 'habd')">+🗣️</button>
+                </div>
+                <div class="player-card">
+                    <h3 id="p2Name">اللاعب 2</h3>
+                    <p>🧠: <span id="p2Brain">0</span> | 🗣️: <span id="p2Habd">0</span></p>
+                    <button class="btn-action" style="background: var(--secondary)" onclick="addPoint(2, 'brain')">+🧠</button>
+                    <button class="btn-action" style="background: var(--primary)" onclick="addPoint(2, 'habd')">+🗣️</button>
+                </div>
+            </div>
+
+            <div id="catSelectBox" class="categories-grid">
+                <h3>🎮 اختر قسم الجولة</h3>
+                <div class="cat-grid">
+                    <button class="cat-btn" onclick="loadCategory('أسئلة عامة')">❓ أسئلة عامة</button>
+                    <button class="cat-btn" onclick="loadCategory('مسلسلات')">📺 مسلسلات</button>
+                    <button class="cat-btn" onclick="loadCategory('أفلام')">🎬 أفلام</button>
+                    <button class="cat-btn" onclick="loadCategory('أغاني')">🎵 أغاني</button>
+                    <button class="cat-btn" onclick="loadCategory('رياضة')">⚽ رياضة</button>
+                    <button class="cat-btn" onclick="loadCategory('مصري')">🇪🇬 قسم مصري</button>
+                    <button class="cat-btn" onclick="loadCategory('ألغاز')">🧩 ألغاز وذكاء</button>
+                    <button class="cat-btn" onclick="loadCategory('صح أم هبد')">🎯 صح ولا هبد</button>
+                    <button class="cat-btn" onclick="loadCategory('خمنها')">👁️ خمن الصورة</button>
+                    <button class="cat-btn" onclick="loadCategory('هبد')">😂 هبد في هبد</button>
+                    <button class="cat-btn" onclick="loadCategory('أسرع واحد')">⚡ أسرع واحد</button>
+                    <button class="cat-btn" onclick="loadCategory('النهائية')">🔥 الجولة النهائية</button>
+                </div>
+            </div>
+
+            <div id="qBox" class="q-card hidden">
+                <h3 id="catTitle" style="color: var(--secondary); margin-top:0;"></h3>
+                <img id="qImage" class="q-img hidden" src="" alt="صورة التحدي">
+                <p id="qText" style="font-size: 1.1rem; font-weight: bold;"></p>
+                
+                <div id="optionsBox" class="options-grid"></div>
+
+                <div style="margin-top: 15px;">
+                    <button class="btn-action" onclick="backToCategories()">اختر قسم تاني ↩️</button>
+                    <button class="btn-action" style="background: var(--primary)" onclick="nextQuestion()">سؤال تاني نفس القسم 🎲</button>
+                </div>
+            </div>
+
+            <button class="btn-reset" onclick="resetGame()">إعادة تصفير الجيم 🔄</button>
         </div>
 
-        <button class="btn btn-reset" onclick="resetGame()">إعادة تصفير النتيجة 🔄</button>
     </div>
 
-    <!-- نافذة الاحتفال بالبطل -->
     <div id="winModal" class="modal">
         <div class="modal-content">
             <h1 style="font-size: 2.5rem; margin: 0;">🎉 🏆 🎉</h1>
-            <h2 id="winnerText" style="color: #38bdf8; margin: 15px 0;"></h2>
-            <p style="font-size: 1.2rem; color: #f97316; font-weight: bold;">لقب المفكر الهاباد رسميًا!</p>
-            <button class="btn btn-brain" onclick="closeModal()" style="padding: 10px 20px; margin-top: 15px;">لعب جولة جديدة 🔄</button>
+            <h2 id="winnerText" style="color: var(--secondary); margin: 15px 0;"></h2>
+            <p style="font-size: 1.2rem; color: var(--primary); font-weight: bold;">لقب المفكر الهاباد رسميًا!</p>
+            <button class="btn-action" style="background: var(--secondary); padding: 10px 20px;" onclick="closeModal()">جولة جديدة 🔄</button>
         </div>
     </div>
 
     <script>
-        const questions = [
-            { cat: "تشغيل دماغ 🧠", q: "شيء كل ما تاخد منه يكبر؟", a: "الحفرة" },
-            { cat: "هبد في هبد 🗣️", q: "ليه الزرافة رقبتها طويلة؟ (أفضل هبدة تتصدق تكسب)", a: "أهبد إجابة مبتكرة ومقنعة تاخد النقطة!" },
-            { cat: "أسئلة عامة 📚", q: "ما هي عاصمة أستراليا؟", a: "كانبرا" },
-            { cat: "خمن الإفيه 🎬", q: "كمل: 'أنا مش مصدق عيني.. حنفي بنفسه...'", a: "هنا!" }
-        ];
-
-        let scores = {
-            1: { brain: 0, habd: 0 },
-            2: { brain: 0, habd: 0 }
+        const gameData = {
+            "خمنها": [
+                { 
+                    q: "خمن اسم الشيء أو الكائن الظاهر في هذه الصورة المقربة جداً!", 
+                    img: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=500", 
+                    opts: ["كلب", "قطة", "أسد", "ثعلب"], 
+                    a: 0 
+                },
+                { 
+                    q: "المشهد ده مقطوع من أنهي فيلم مشهور؟", 
+                    img: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500", 
+                    opts: ["فيلم سينمائي", "مسرحية", "برنامج تلفزيوني", "مسلسل"], 
+                    a: 0 
+                }
+            ],
+            "أسئلة عامة": [
+                { q: "ما هي أصغر دولة في العالم من حيث المساحة؟", opts: ["موناكو", "الفاتيكان", "المالديف", "سان مارينو"], a: 1 },
+                { q: "ما هو العنصر الكيميائي الذي رمزه O؟", opts: ["الحديد", "الأوكسجين", "الذهب", "الهيدروجين"], a: 1 }
+            ],
+            "مسلسلات": [
+                { q: "في مسلسل الكبير أوي، اسم قرية الكبير إيه؟", opts: ["المزاريطة", "الكوم الأخضر", "أطاطا", "التل الكبير"], a: 0 },
+                { q: "مسلسل 'جعفر العمدة' دارت أحداثه الرئيسية في حي إيه؟", opts: ["الحسين", "السيدة زينب", "خان الخليلي", "شبرا"], a: 1 }
+            ],
+            "أفلام": [
+                { q: "مين صاحب إفيه 'أنا مش مصدق عيني.. حنفي بنفسه هنا'؟", opts: ["عادل إمام", "عبدالفتاح القصري", "إسماعيل يس", "استيفان روستي"], a: 1 }
+            ],
+            "أغاني": [
+                { q: "كمل الأغنية: 'أما نعيمة نبي نوحي... '", opts: ["على حبيبي روح قلبي", "خلي علي يروح للبيت", "وديني عند أختي", "سلملي على الحبايب"], a: 1 }
+            ],
+            "رياضة": [
+                { q: "كم عدد أفراد فريق كرة اليد داخل الملعب؟", opts: ["11 لاعب", "6 لاعبين", "7 لاعبين", "5 لاعبين"], a: 2 }
+            ],
+            "مصري": [
+                { q: "أصل كلمة 'مدمس' في الفول يرجع للغة إيه؟", opts: ["القبطية/الفرعونية", "التركية", "الفرنسية", "اليونانية"], a: 0 }
+            ],
+            "ألغاز": [
+                { q: "شيء كلما أخذت منه كبر؟", opts: ["الحفرة", "العمر", "الميلاد", "الحبل"], a: 0 }
+            ],
+            "صح أم هبد": [
+                { q: "الأخطبوط يمتلك 3 قلوب ودمه أزرق اللون.", opts: ["صح 🧠", "هبد 🗣️"], a: 0 }
+            ],
+            "هبد": [
+                { q: "ليه الشاي بالنعناع بيصلح أي حالة نفسية؟", opts: ["لأنه مشروب ملوكي", "أهبد إجابة مبتكرة ومقنعة تكسب!"], a: 1 }
+            ],
+            "أسرع واحد": [
+                { q: "أسرع واحد يقول 3 كلمات تبدأ بحرف 'الخاء' ياخد النقطة فوراً!", opts: ["تمت الإجابة بنجاح ⚡"], a: 0 }
+            ],
+            "النهائية": [
+                { q: "سؤال الحسم: كام عدد سور القرآن الكريم؟", opts: ["114", "110", "120", "112"], a: 0 }
+            ]
         };
+
+        let currentCat = "";
+        let scores = { 1: { brain: 0, habd: 0 }, 2: { brain: 0, habd: 0 } };
+
+        function goToSetup() {
+            document.getElementById('homeScreen').classList.add('hidden');
+            document.getElementById('setupScreen').classList.remove('hidden');
+        }
+
+        function goToCategories() {
+            document.getElementById('setupScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+        }
 
         function updateNames() {
             document.getElementById('p1Name').innerText = document.getElementById('p1Input').value;
             document.getElementById('p2Name').innerText = document.getElementById('p2Input').value;
+        }
+
+        function loadCategory(catName) {
+            currentCat = catName;
+            document.getElementById('catTitle').innerText = catName;
+            document.getElementById('catSelectBox').classList.add('hidden');
+            document.getElementById('qBox').classList.remove('hidden');
+            nextQuestion();
+        }
+
+        function backToCategories() {
+            document.getElementById('qBox').classList.add('hidden');
+            document.getElementById('catSelectBox').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            const catQuestions = gameData[currentCat] || [{ q: "سؤال افتراضي؟", opts: ["إجابة 1", "إجابة 2"], a: 0 }];
+            const qData = catQuestions[Math.floor(Math.random() * catQuestions.length)];
+            
+            document.getElementById('qText').innerText = qData.q;
+            
+            // التعامل مع الصورة
+            const imgElem = document.getElementById('qImage');
+            if (qData.img) {
+                imgElem.src = qData.img;
+                imgElem.classList.remove('hidden');
+            } else {
+                imgElem.classList.add('hidden');
+            }
+
+            const optContainer = document.getElementById('optionsBox');
+            optContainer.innerHTML = "";
+
+            qData.opts.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "opt-btn";
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    if (idx === qData.a) {
+                        btn.classList.add('correct');
+                    } else {
+                        btn.classList.add('wrong');
+                    }
+                };
+                optContainer.appendChild(btn);
+            });
         }
 
         function addPoint(player, type) {
@@ -107,9 +253,7 @@
         }
 
         function triggerFireworks() {
-            var duration = 3 * 1000;
-            var end = Date.now() + duration;
-
+            var end = Date.now() + (3 * 1000);
             (function frame() {
                 confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 } });
                 confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 } });
@@ -122,24 +266,13 @@
             resetGame();
         }
 
-        function nextQuestion() {
-            const random = questions[Math.floor(Math.random() * questions.length)];
-            document.getElementById("category").innerText = random.cat;
-            document.getElementById("question").innerText = random.q;
-            document.getElementById("answer").innerText = "الإجابة: " + random.a;
-            document.getElementById("answer").style.display = "none";
-        }
-
-        function showAnswer() {
-            document.getElementById("answer").style.display = "block";
-        }
-
         function resetGame() {
             scores = { 1: { brain: 0, habd: 0 }, 2: { brain: 0, habd: 0 } };
             document.getElementById('p1Brain').innerText = 0;
             document.getElementById('p1Habd').innerText = 0;
             document.getElementById('p2Brain').innerText = 0;
             document.getElementById('p2Habd').innerText = 0;
+            backToCategories();
         }
     </script>
 </body>
